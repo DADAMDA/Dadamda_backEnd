@@ -1,0 +1,56 @@
+## MySQL 설정
+# MySQL 설정
+
+server:
+  address: localhost
+  port: 8080
+
+spring:
+  datasource:
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/Dadamda?createDatabaseIfNotExist=true&useUnicode=true&characterEncoding=UTF-8&characterSetResults=UTF-8&useSSL=true
+    username: dadamda
+    password: 1234
+
+  jpa:
+    database: mysql
+    show-sql: true
+    hibernate:
+      ddl-auto: update
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+
+# createDatabaseIfNotExist: 데이터베이스가 존재하지 않으면 자동으로 생성
+# useUnicode: 유니코드 사용 여부 설정
+# characterEncoding: 문자열 인코딩 종류 설정
+# characterSetResult: 결과값의 인코딩 종류 설정
+# useSSL: SSL 사용여부 설정
+
+# spring.jpa.properties.hibernate.show_sql : 하이버네이트가 실행한 모든 SQL문을 콘솔로 출력
+# spring.jpa.properties.hibernate.format_sql : SQL문을 가독성 있게 표현
+
+## SOCIAL LOGIN ##
+sns:
+  google:
+    url: https://accounts.google.com/o/oauth2/v2/auth
+    token:
+      url: https://oauth2.googleapis.com/token
+    client:
+      id: 349742149888-pk25o4qqsdjuisfv0kf8t4lip258u4cj.apps.googleusercontent.com
+      secret: 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
+    callback:
+      url: http://localhost:8080/auth/google
+  kakao:
+    url: https://kauth.kakao.com/oauth/authorize
+    client:
+      id: 25fd5111ae585b407de36b781b5bcb7a
+      secret: k8ALqYVBC2eUylQpjbORLJgSl8TCkzAY
+    callback:
+      url: http://localhost:8080/auth/kakao
+    token:
+      url: https://kauth.kakao.com/oauth/token
+
+
+
