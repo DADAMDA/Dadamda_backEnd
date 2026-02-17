@@ -15,7 +15,7 @@ Dadamda 서비스의 백엔드 서버입니다.
 - Spring Security
 
 ### Database
-- Maria DB
+- Maria DB 12.15
 
 ### ORM
 - JPA (Hibernate)
@@ -35,7 +35,7 @@ Dadamda 서비스의 백엔드 서버입니다.
 - Java: 23
 - Spring Boot: 3.5.10
 - Gradle: 8.14.4
-- MySQL: 8.0
+- Maria DB : 12.15
 
 ## ⚙️ Development Environment
 - IDE: IntelliJ IDEA
