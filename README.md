@@ -4,6 +4,7 @@
 Dadamda 서비스의 백엔드 서버입니다.
 
 ## 🛠 Tech Stack
+- OIDC 인증
 
 ### Language
 - Java 23
@@ -15,7 +16,7 @@ Dadamda 서비스의 백엔드 서버입니다.
 - Spring Security
 
 ### Database
-- MySQL 8.0
+- Maria DB
 
 ### ORM
 - JPA (Hibernate)
