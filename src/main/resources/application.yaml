@@ -25,7 +25,10 @@ app:
 
   google:
     # RN Google Sign-In에서 발급받는 ID Token의 aud 검증용 (보통 Web client id)
-    client-id: 349742149888-pk25o4qqsdjuisfv0kf8t4lip258u4cj.apps.googleusercontent.com
+    client-id: 1045077868414-j0eud0aokk6c7q2vq0aqkioincgh9g2a.apps.googleusercontent.com
 
   kakao:
     userinfo-url: "https://kapi.kakao.com/v2/user/me"
+
+  apple:
+    clinet-id: com.sangjun.dadamda
