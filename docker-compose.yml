@@ -1,0 +1,28 @@
+services:
+  db:
+    image: mariadb:11.4 # 12.15 버전은 현재 정식 Docker Hub 태그에 없을 수 있어 안정적인 11.4 사용을 권장합니다.
+    container_name: dadamda-db
+    restart: always
+    environment:
+      MARIADB_DATABASE: dadamda
+      MARIADB_USER: dadamda
+      MARIADB_PASSWORD: "1234"
+      MARIADB_ROOT_PASSWORD: "root"
+    ports:
+      - "3307:3306" # 로컬 3307 -> 컨테이너 3306 연결
+    volumes:
+      - ./mariadb/data:/var/lib/mysql
+
+  app:
+    build: .
+    container_name: dadamda-server
+    depends_on:
+      - db
+    ports:
+      - "8080:8080"
+    environment:
+      # 컨테이너 간 통신을 위해 localhost 대신 서비스 이름(db) 사용
+      SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/dadamda?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul
+      SPRING_DATASOURCE_USERNAME: dadamda
+      SPRING_DATASOURCE_PASSWORD: "1234"
+    restart: on-failure
