@@ -1,4 +1,4 @@
-package com.example.Oauth.auth;
+package com.example.Oauth.auth.service;
 
 import com.example.Oauth.user.User;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
