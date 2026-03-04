@@ -1,4 +1,4 @@
-package com.example.Oauth.auth;
+package com.example.Oauth.common.exception;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.oauth2.jwt.JwtException;

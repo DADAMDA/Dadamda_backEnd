@@ -1,4 +1,4 @@
-package com.example.Oauth.auth;
+package com.example.Oauth.auth.verifier;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.oauth2.core.DelegatingOAuth2TokenValidator;
