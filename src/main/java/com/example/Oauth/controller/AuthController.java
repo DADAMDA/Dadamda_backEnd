@@ -56,8 +56,10 @@ public class AuthController {
         );
 
         String ourJwt = jwtService.issueAccessToken(user);
+        TokenResponse tokenResponse = new TokenResponse(ourJwt, !existed);
+        ResponseEntity<TokenResponse> response = ResponseEntity.ok(tokenResponse);
 
-        return ResponseEntity.ok(new TokenResponse(ourJwt, !existed));
+        return response;
     }
 
     @PostMapping("/google")
@@ -80,7 +82,11 @@ public class AuthController {
         );
 
         String ourJwt = jwtService.issueAccessToken(user);
+        TokenResponse tokenResponse = new TokenResponse(ourJwt, !existed);
+        ResponseEntity<TokenResponse> response = ResponseEntity.ok(tokenResponse);
 
-        return ResponseEntity.ok(new TokenResponse(ourJwt, !existed));
+        return response;
     }
 }
+
+
