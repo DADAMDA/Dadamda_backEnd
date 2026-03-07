@@ -12,6 +12,7 @@ public record CreateBookmarkRequest(
         @NotNull(message = "folderId is required")
         @Positive(message = "folderId must be positive")
         Long folderId,
+
         @Schema(description = "저장할 URL", example = "https://example.com")
         @NotBlank(message = "url is required")
         @Pattern(regexp = "https?://.+", message = "url must start with http:// or https://")
