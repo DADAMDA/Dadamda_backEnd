@@ -94,5 +94,6 @@ public class BookmarkService {
                 .orElseThrow(() -> new ResourceNotFoundException("Bookmark not found: " + bookmarkId));
 
         bookmarkRepository.delete(bookmark);
+        /*민석테스트 수정*/
     }
 }
