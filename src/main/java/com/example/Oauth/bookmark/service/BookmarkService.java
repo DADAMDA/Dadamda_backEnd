@@ -2,6 +2,7 @@ package com.example.Oauth.bookmark.service;
 
 import com.example.Oauth.bookmark.crawler.BookmarkMetadata;
 import com.example.Oauth.bookmark.crawler.MetadataCrawler;
+import com.example.Oauth.bookmark.dto.BookmarkCountResponse;
 import com.example.Oauth.bookmark.dto.BookmarkResponse;
 import com.example.Oauth.bookmark.dto.CreateBookmarkRequest;
 import com.example.Oauth.bookmark.entity.Bookmark;
@@ -12,6 +13,8 @@ import com.example.Oauth.folder.entity.Folder;
 import com.example.Oauth.folder.service.FolderService;
 import java.net.URI;
 import java.util.List;
+import java.util.Optional;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -55,6 +58,16 @@ public class BookmarkService {
         Bookmark savedBookmark = bookmarkRepository.save(bookmark);
         BookmarkResponse bookmarkResponse = BookmarkResponse.from(savedBookmark);
         return bookmarkResponse;
+    }
+
+    public Optional<BookmarkResponse> getLatestBookmark() {
+        return bookmarkRepository.findLatestBookmark(currentUserProvider.getCurrentUserId())
+                .map(BookmarkResponse::from);
+    }
+
+    public BookmarkCountResponse getBookmarkCount() {
+        long count = bookmarkRepository.countByFolderUserId(currentUserProvider.getCurrentUserId());
+        return new BookmarkCountResponse(count);
     }
 
     /**

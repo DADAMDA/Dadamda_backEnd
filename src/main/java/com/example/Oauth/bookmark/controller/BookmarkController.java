@@ -1,6 +1,7 @@
 package com.example.Oauth.bookmark.controller;
 
 import com.example.Oauth.bookmark.dto.BookmarkResponse;
+import com.example.Oauth.bookmark.dto.BookmarkCountResponse;
 import com.example.Oauth.bookmark.dto.CreateBookmarkRequest;
 import com.example.Oauth.bookmark.service.BookmarkService;
 import io.swagger.v3.oas.annotations.Operation;
@@ -64,6 +65,18 @@ public class BookmarkController {
         return response;
     }
 
+    @GetMapping("/count")
+    @Operation(summary = "북마크 개수 조회", description = "현재 사용자가 저장한 전체 북마크 개수를 조회한다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "북마크 개수 조회 성공",
+                    content = @Content(schema = @Schema(implementation = BookmarkCountResponse.class)))
+    })
+    public ResponseEntity<BookmarkCountResponse> getBookmarkCount() {
+        BookmarkCountResponse bookmarkCountResponse = bookmarkService.getBookmarkCount();
+        ResponseEntity<BookmarkCountResponse> response = ResponseEntity.ok(bookmarkCountResponse);
+        return response;
+    }
+
     @DeleteMapping("/{id}")
     @Operation(summary = "북마크 삭제", description = "북마크 ID로 북마크를 삭제한다.")
     @ApiResponses({
@@ -78,4 +91,18 @@ public class BookmarkController {
         ResponseEntity<Void> response = ResponseEntity.noContent().build();
         return response;
     }
+
+    @GetMapping("/latest")
+    @Operation(summary = "최근 북마크 조회", description = "가장 최근에 저장된 북마크 1개를 조회한다.")
+    @ApiResponses({
+            @ApiResponse(responseCode = "200", description = "최근 북마크 조회 성공",
+                    content = @Content(schema = @Schema(implementation = BookmarkResponse.class))),
+            @ApiResponse(responseCode = "204", description = "북마크 없음")
+    })
+    public ResponseEntity<BookmarkResponse> getLatestBookmark() {
+        return bookmarkService.getLatestBookmark()
+                .map(ResponseEntity::ok)
+                .orElse(ResponseEntity.noContent().build());
+    }
+
 }

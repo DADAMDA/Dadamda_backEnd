@@ -27,4 +27,16 @@ public interface BookmarkRepository extends JpaRepository<Bookmark, Long> {
               and folder.user.id = :userId
             """)
     Optional<Bookmark> findOwnedBookmark(@Param("bookmarkId") Long bookmarkId, @Param("userId") Long userId);
+
+    long countByFolderUserId(Long userId);
+
+    @Query("""
+        select bookmark
+        from Bookmark bookmark
+        join fetch bookmark.folder folder
+        where folder.user.id = :userId
+        order by bookmark.createdAt desc
+        limit 1
+        """)
+    Optional<Bookmark> findLatestBookmark(@Param("userId") Long userId);
 }
