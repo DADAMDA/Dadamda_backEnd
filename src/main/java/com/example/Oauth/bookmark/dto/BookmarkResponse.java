@@ -2,7 +2,6 @@ package com.example.Oauth.bookmark.dto;
 
 import com.example.Oauth.bookmark.entity.Bookmark;
 import io.swagger.v3.oas.annotations.media.Schema;
-import java.time.Instant;
 
 @Schema(description = "북마크 응답")
 public record BookmarkResponse(
@@ -19,9 +18,8 @@ public record BookmarkResponse(
         @Schema(description = "썸네일 URL", example = "https://example.com/thumbnail.png")
         String thumbnail,
         @Schema(description = "도메인", example = "example.com")
-        String domain,
-        @Schema(description = "생성 시각", example = "2026-03-06T10:15:30Z")
-        Instant createdAt
+        String domain
+
 ) {
 
     public static BookmarkResponse from(Bookmark bookmark) {
@@ -32,8 +30,7 @@ public record BookmarkResponse(
                 bookmark.getTitle(),
                 bookmark.getDescription(),
                 bookmark.getThumbnail(),
-                bookmark.getDomain(),
-                bookmark.getCreatedAt()
+                bookmark.getDomain()
         );
     }
 }

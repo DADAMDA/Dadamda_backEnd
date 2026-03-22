@@ -44,12 +44,15 @@ public class FolderService {
      *
      * @return 폴더 응답 DTO 목록
      */
-    public List<FolderResponse> getFolders() {
-        List<Folder> folders = folderRepository.findAllByUserIdOrderByCreatedAtDesc(currentUserProvider.getCurrentUserId());
-        List<FolderResponse> folderResponses = folders.stream()
+    public List<FolderResponse> getFolders(Integer limit) {
+        Long userId = currentUserProvider.getCurrentUserId();
+        List<Folder> folders = limit != null
+                ? folderRepository.findTopByUserIdOrderByCreatedAtAsc(userId, limit)
+                : folderRepository.findAllByUserIdOrderByCreatedAtAsc(userId);
+
+        return folders.stream()
                 .map(FolderResponse::from)
                 .toList();
-        return folderResponses;
     }
 
     /**
