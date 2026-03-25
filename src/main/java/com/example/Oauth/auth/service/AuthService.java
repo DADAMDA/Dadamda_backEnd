@@ -2,7 +2,7 @@ package com.example.Oauth.auth.service;
 
 import com.example.Oauth.auth.client.KakaoApiClient;
 import com.example.Oauth.auth.verifier.GoogleTokenVerifier;
-import com.example.Oauth.dto.auth.TokenResponse;
+import com.example.Oauth.auth.token.TokenResponse;
 import com.example.Oauth.user.User;
 import com.example.Oauth.user.UserRepository;
 import com.example.Oauth.user.UserService;
@@ -16,17 +16,20 @@ public class AuthService {
     private final GoogleTokenVerifier googleTokenVerifier;
     private final UserService userService;
     private final JwtService jwtService;
+    private final RefreshTokenService refreshTokenService;
     private final UserRepository userRepository;
 
     public AuthService(KakaoApiClient kakaoApiClient,
                        GoogleTokenVerifier googleTokenVerifier,
                        UserService userService,
                        JwtService jwtService,
+                       RefreshTokenService refreshTokenService,
                        UserRepository userRepository) {
         this.kakaoApiClient = kakaoApiClient;
         this.googleTokenVerifier = googleTokenVerifier;
         this.userService = userService;
         this.jwtService = jwtService;
+        this.refreshTokenService = refreshTokenService;
         this.userRepository = userRepository;
     }
 
@@ -46,8 +49,11 @@ public class AuthService {
                 info.profileImageUrl()
         );
 
-        String ourJwt = jwtService.issueAccessToken(user);
-        return new TokenResponse(ourJwt, !existed);
+        String accessToken = jwtService.issueAccessToken(user);
+        String refreshToken = jwtService.issueRefreshToken(user);
+        refreshTokenService.save(user, refreshToken);
+
+        return new TokenResponse(accessToken, refreshToken, !existed);
     }
 
     @Transactional
@@ -66,7 +72,29 @@ public class AuthService {
                 info.pictureUrl()
         );
 
-        String ourJwt = jwtService.issueAccessToken(user);
-        return new TokenResponse(ourJwt, !existed);
+        String accessToken = jwtService.issueAccessToken(user);
+        String refreshToken = jwtService.issueRefreshToken(user);
+        refreshTokenService.save(user, refreshToken);
+
+        return new TokenResponse(accessToken, refreshToken, !existed);
+    }
+
+    @Transactional
+    public TokenResponse refresh(String refreshToken) {
+        var savedToken = refreshTokenService.getValidToken(refreshToken);
+        User user = savedToken.getUser();
+
+        savedToken.revoke();
+
+        String newAccessToken = jwtService.issueAccessToken(user);
+        String newRefreshToken = jwtService.issueRefreshToken(user);
+        refreshTokenService.save(user, newRefreshToken);
+
+        return new TokenResponse(newAccessToken, newRefreshToken, false);
+    }
+
+    @Transactional
+    public void logout(String refreshToken) {
+        refreshTokenService.revoke(refreshToken);
     }
 }

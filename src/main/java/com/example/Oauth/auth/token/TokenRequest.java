@@ -1,3 +1,3 @@
-package com.example.Oauth.dto.auth;
+package com.example.Oauth.auth.token;
 
 public record TokenRequest(String token) {}
