@@ -1,4 +1,4 @@
-package com.example.Oauth.auth;
+package com.example.Oauth.auth.service;
 
 import com.example.Oauth.user.User;
 import com.nimbusds.jose.jwk.source.ImmutableSecret;
@@ -11,6 +11,7 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.UUID;
 
 @Service
 public class JwtService {
@@ -18,11 +19,13 @@ public class JwtService {
     private final JwtEncoder encoder;
     private final String issuer;
     private final long accessTokenMinutes;
+    private final long refreshTokenDays;
 
     public JwtService(
             @Value("${app.jwt.secret}") String secret,
             @Value("${app.jwt.issuer}") String issuer,
-            @Value("${app.jwt.access-token-minutes}") long accessTokenMinutes
+            @Value("${app.jwt.access-token-minutes}") long accessTokenMinutes,
+            @Value("${app.jwt.refresh-token-days}") long refreshTokenDays
     ) {
         if (secret == null || secret.isBlank()) {
             throw new IllegalArgumentException("app.jwt.secret must not be blank");
@@ -46,6 +49,7 @@ public class JwtService {
             throw new IllegalArgumentException("app.jwt.access-token-minutes must be > 0");
         }
         this.accessTokenMinutes = accessTokenMinutes;
+        this.refreshTokenDays = refreshTokenDays;
     }
 
     public String issueAccessToken(User user) {
@@ -84,5 +88,22 @@ public class JwtService {
         JwtEncoderParameters params = JwtEncoderParameters.from(header, claims);
 
         return encoder.encode(params).getTokenValue();
+    }
+
+    public String issueRefreshToken(User user) {
+        Instant now = Instant.now();
+        Instant exp = now.plusSeconds(refreshTokenDays * 24 * 60 * 60);
+
+        JwtClaimsSet claims = JwtClaimsSet.builder()
+                .issuer(issuer)
+                .issuedAt(now)
+                .expiresAt(exp)
+                .subject(String.valueOf(user.getId()))
+                .claim("type", "refresh")
+                .claim("jti", UUID.randomUUID().toString())
+                .build();
+
+        JwsHeader header = JwsHeader.with(MacAlgorithm.HS256).build();
+        return encoder.encode(JwtEncoderParameters.from(header, claims)).getTokenValue();
     }
 }

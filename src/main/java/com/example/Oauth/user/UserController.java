@@ -1,4 +1,4 @@
-package com.example.Oauth.controller;
+package com.example.Oauth.user;
 
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;

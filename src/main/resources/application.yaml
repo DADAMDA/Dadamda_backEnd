@@ -16,12 +16,26 @@ spring:
       hibernate:
         format_sql: true
 
+  ai:
+    model:
+      chat: google-genai
+    google:
+      genai:
+        api-key: ${GEMINI_API_KEY}
+        chat:
+          options:
+            model: gemini-2.0-flash
+            temperature: 0.2
+            response-mime-type: application/json
+            max-output-tokens: 1000
+
 app:
   jwt:
     # 최소 32바이트 이상 권장. 운영에서는 Secret Manager/환경변수로 관리.
     secret: 0123456789abcdef0123456789abcdef
     issuer: "social-rn"
     access-token-minutes: 60
+    refresh-token-days: 14
 
   google:
     # RN Google Sign-In에서 발급받는 ID Token의 aud 검증용 (보통 Web client id)
@@ -31,4 +45,4 @@ app:
     userinfo-url: "https://kapi.kakao.com/v2/user/me"
 
   apple:
-    clinet-id: com.sangjun.dadamda
+    client-id: com.sangjun.dadamda

@@ -1,4 +1,4 @@
-package com.example.Oauth.auth;
+package com.example.Oauth.common.exception;
 
 import com.example.Oauth.common.exception.MetadataCrawlException;
 import com.example.Oauth.common.exception.ResourceNotFoundException;
