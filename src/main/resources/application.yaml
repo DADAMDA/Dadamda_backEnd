@@ -16,7 +16,6 @@ spring:
       hibernate:
         format_sql: true
 
-spring:
   ai:
     model:
       chat: google-genai
@@ -46,5 +45,4 @@ app:
     userinfo-url: "https://kapi.kakao.com/v2/user/me"
 
   apple:
-    clinet-id: com.sangjun.dadamda
-
+    client-id: com.sangjun.dadamda

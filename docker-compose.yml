@@ -1,28 +1,60 @@
 services:
   db:
-    image: mariadb:11.4 # 12.15 버전은 현재 정식 Docker Hub 태그에 없을 수 있어 안정적인 11.4 사용을 권장합니다.
+    image: mariadb:11.4
     container_name: dadamda-db
-    restart: always
+    restart: unless-stopped
+
     environment:
       MARIADB_DATABASE: dadamda
       MARIADB_USER: dadamda
-      MARIADB_PASSWORD: "1234"
-      MARIADB_ROOT_PASSWORD: "root"
+      MARIADB_PASSWORD: 1234
+      MARIADB_ROOT_PASSWORD: root
+      TZ: Asia/Seoul
+
     ports:
-      - "3307:3306" # 로컬 3307 -> 컨테이너 3306 연결
+      - "3307:3306"
+
     volumes:
       - ./mariadb/data:/var/lib/mysql
 
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-uroot", "-proot"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+    networks:
+      - dadamda-network
+
   app:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+
     container_name: dadamda-server
+    restart: unless-stopped
+
     depends_on:
-      - db
+      db:
+        condition: service_healthy
+
     ports:
       - "8080:8080"
+
     environment:
-      # 컨테이너 간 통신을 위해 localhost 대신 서비스 이름(db) 사용
       SPRING_DATASOURCE_URL: jdbc:mariadb://db:3306/dadamda?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Seoul
       SPRING_DATASOURCE_USERNAME: dadamda
-      SPRING_DATASOURCE_PASSWORD: "1234"
-    restart: on-failure
+      SPRING_DATASOURCE_PASSWORD: 1234
+
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_JPA_DATABASE_PLATFORM: org.hibernate.dialect.MariaDBDialect
+
+      TZ: Asia/Seoul
+
+    networks:
+      - dadamda-network
+
+
+networks:
+  dadamda-network:
+    driver: bridge
