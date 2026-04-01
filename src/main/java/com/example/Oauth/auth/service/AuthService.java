@@ -1,6 +1,7 @@
 package com.example.Oauth.auth.service;
 
 import com.example.Oauth.auth.client.KakaoApiClient;
+import com.example.Oauth.auth.token.RefreshToken;
 import com.example.Oauth.auth.verifier.GoogleTokenVerifier;
 import com.example.Oauth.auth.token.TokenResponse;
 import com.example.Oauth.user.User;
@@ -81,13 +82,14 @@ public class AuthService {
 
     @Transactional
     public TokenResponse refresh(String refreshToken) {
-        var savedToken = refreshTokenService.getValidToken(refreshToken);
+        RefreshToken savedToken = refreshTokenService.getValidTokenForUpdate(refreshToken);
         User user = savedToken.getUser();
 
         savedToken.revoke();
 
         String newAccessToken = jwtService.issueAccessToken(user);
         String newRefreshToken = jwtService.issueRefreshToken(user);
+
         refreshTokenService.save(user, newRefreshToken);
 
         return new TokenResponse(newAccessToken, newRefreshToken, false);
