@@ -46,6 +46,22 @@ public class RefreshTokenService {
     }
 
     @Transactional
+    public RefreshToken getValidTokenForUpdate(String token) {
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenForUpdate(token)
+                .orElseThrow(() -> new IllegalArgumentException("refresh token not found"));
+
+        if (refreshToken.isRevoked()) {
+            throw new IllegalArgumentException("refresh token revoked");
+        }
+
+        if (refreshToken.isExpired()) {
+            throw new IllegalArgumentException("refresh token expired");
+        }
+
+        return refreshToken;
+    }
+
+    @Transactional
     public void revoke(String token) {
         refreshTokenRepository.findByToken(token).ifPresent(RefreshToken::revoke);
     }

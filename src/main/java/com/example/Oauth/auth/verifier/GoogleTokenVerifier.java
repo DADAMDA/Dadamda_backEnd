@@ -8,6 +8,7 @@ import org.springframework.security.oauth2.core.OAuth2TokenValidatorResult;
 import org.springframework.security.oauth2.jwt.*;
 import org.springframework.stereotype.Component;
 
+import java.time.Duration;
 import java.util.List;
 
 @Component
@@ -16,24 +17,41 @@ public class GoogleTokenVerifier {
     private final JwtDecoder decoder;
 
     public GoogleTokenVerifier(@Value("${app.google.client-id}") String googleClientId) {
-        NimbusJwtDecoder base = (NimbusJwtDecoder) JwtDecoders.fromIssuerLocation("https://accounts.google.com");
+        NimbusJwtDecoder jwtDecoder =
+                (NimbusJwtDecoder) JwtDecoders.fromIssuerLocation("https://accounts.google.com");
 
-        OAuth2TokenValidator<Jwt> issuer = token -> {
+        OAuth2TokenValidator<Jwt> issuerValidator = token -> {
             String iss = token.getIssuer() != null ? token.getIssuer().toString() : null;
             if ("https://accounts.google.com".equals(iss) || "accounts.google.com".equals(iss)) {
                 return OAuth2TokenValidatorResult.success();
             }
             return OAuth2TokenValidatorResult.failure(
-                    new OAuth2Error("invalid_token", "Invalid issuer: " + iss, null)
+                    new OAuth2Error("invalid_token", "Invalid issuer", null)
             );
         };
 
-        OAuth2TokenValidator<Jwt> audience = new AudienceValidator(googleClientId);
+        OAuth2TokenValidator<Jwt> audienceValidator = token -> {
+            List<String> aud = token.getAudience();
+            if (aud != null && aud.contains(googleClientId)) {
+                return OAuth2TokenValidatorResult.success();
+            }
+            return OAuth2TokenValidatorResult.failure(
+                    new OAuth2Error("invalid_token", "Invalid audience", null)
+            );
+        };
+        // Google ID TOKEN 시간 추가
+        JwtTimestampValidator timestampValidator =
+                new JwtTimestampValidator(Duration.ofSeconds(60));
 
-        // (권장) exp/nbf 등 기본 검증도 포함하고 싶으면 JwtValidators.createDefaultWithIssuer(...) 조합 가능
-        base.setJwtValidator(new DelegatingOAuth2TokenValidator<>(issuer, audience));
+        jwtDecoder.setJwtValidator(
+                new DelegatingOAuth2TokenValidator<>(
+                        issuerValidator,
+                        audienceValidator,
+                        timestampValidator
+                )
+        );
 
-        this.decoder = base;
+        this.decoder = jwtDecoder;
     }
 
     public GoogleUserInfo verify(String idToken) {
@@ -48,7 +66,6 @@ public class GoogleTokenVerifier {
         String name = jwt.getClaimAsString("name");
         String picture = jwt.getClaimAsString("picture");
 
-        // ✅ 필수값 강제: 없으면 거절
         if (sub == null || sub.isBlank()) {
             throw new IllegalArgumentException("google sub is required");
         }
@@ -59,29 +76,11 @@ public class GoogleTokenVerifier {
             throw new IllegalArgumentException("google name is required");
         }
         if (picture == null || picture.isBlank()) {
-            throw new IllegalArgumentException("google profile image is required");
+            throw new IllegalArgumentException("google picture is required");
         }
 
         return new GoogleUserInfo(sub, email, name, picture);
     }
 
     public record GoogleUserInfo(String sub, String email, String name, String pictureUrl) {}
-
-    static class AudienceValidator implements OAuth2TokenValidator<Jwt> {
-        private final String requiredAud;
-
-        AudienceValidator(String requiredAud) {
-            this.requiredAud = requiredAud;
-        }
-
-        @Override
-        public OAuth2TokenValidatorResult validate(Jwt token) {
-            List<String> aud = token.getAudience();
-            if (aud != null && aud.contains(requiredAud)) {
-                return OAuth2TokenValidatorResult.success();
-            }
-            OAuth2Error err = new OAuth2Error("invalid_token", "Invalid audience", null);
-            return OAuth2TokenValidatorResult.failure(err);
-        }
-    }
 }
