@@ -13,12 +13,15 @@ public class RefreshToken {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false, length = 1000, unique = true)
-    private String token;
+    @Column(nullable = false, length = 64, unique = true)
+    private String tokenHash;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id")
     private User user;
+
+    @Column(nullable = false, length = 100, unique = true)
+    private String jti;
 
     @Column(nullable = false)
     private Instant expiresAt;
@@ -28,15 +31,17 @@ public class RefreshToken {
 
     protected RefreshToken() {}
 
-    public RefreshToken(String token, User user, Instant expiresAt) {
-        this.token = token;
+    public RefreshToken(String tokenHash, User user, String jti, Instant expiresAt) {
+        this.tokenHash = tokenHash;
         this.user = user;
+        this.jti = jti;
         this.expiresAt = expiresAt;
     }
 
     public Long getId() { return id; }
-    public String getToken() { return token; }
+    public String getTokenHash() { return tokenHash; }
     public User getUser() { return user; }
+    public String getJti() { return jti; }
     public Instant getExpiresAt() { return expiresAt; }
     public boolean isRevoked() { return revoked; }
 

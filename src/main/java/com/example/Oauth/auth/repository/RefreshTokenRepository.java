@@ -1,9 +1,11 @@
 package com.example.Oauth.auth.repository;
 
 import com.example.Oauth.auth.token.RefreshToken;
+import com.example.Oauth.user.User;
 import jakarta.persistence.LockModeType;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -11,10 +13,18 @@ import java.util.Optional;
 
 public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Long> {
 
-    Optional<RefreshToken> findByToken(String token);
+    Optional<RefreshToken> findByTokenHash(String tokenHash);
 
-    //refresh token row에 대해 한 트랜잭션만 먼저 잠금 처리
     @Lock(LockModeType.PESSIMISTIC_WRITE)
-    @Query("select rt from RefreshToken rt join fetch rt.user where rt.token = :token")
-    Optional<RefreshToken> findByTokenForUpdate(@Param("token") String token);
+    @Query("select rt from RefreshToken rt join fetch rt.user where rt.tokenHash = :tokenHash")
+    Optional<RefreshToken> findByTokenHashForUpdate(@Param("tokenHash") String tokenHash);
+
+    @Modifying
+    @Query("""
+           update RefreshToken rt
+              set rt.revoked = true
+            where rt.user = :user
+              and rt.revoked = false
+           """)
+    int revokeAllByUser(@Param("user") User user);
 }

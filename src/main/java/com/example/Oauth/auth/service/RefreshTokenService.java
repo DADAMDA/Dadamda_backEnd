@@ -1,5 +1,8 @@
 package com.example.Oauth.auth.service;
 
+import com.example.Oauth.auth.exception.ExpiredTokenException;
+import com.example.Oauth.auth.exception.InvalidTokenException;
+import com.example.Oauth.auth.exception.RevokedTokenException;
 import com.example.Oauth.auth.repository.RefreshTokenRepository;
 import com.example.Oauth.auth.token.RefreshToken;
 import com.example.Oauth.user.User;
@@ -13,56 +16,39 @@ import java.time.Instant;
 public class RefreshTokenService {
 
     private final RefreshTokenRepository refreshTokenRepository;
-    private final long refreshTokenDays;
+    private final TokenCryptoService tokenCryptoService;
 
     public RefreshTokenService(
             RefreshTokenRepository refreshTokenRepository,
-            @Value("${app.jwt.refresh-token-days}") long refreshTokenDays
+            TokenCryptoService tokenCryptoService
     ) {
         this.refreshTokenRepository = refreshTokenRepository;
-        this.refreshTokenDays = refreshTokenDays;
+        this.tokenCryptoService = tokenCryptoService;
     }
 
     @Transactional
-    public RefreshToken save(User user, String token) {
-        Instant expiresAt = Instant.now().plusSeconds(refreshTokenDays * 24 * 60 * 60);
-        return refreshTokenRepository.save(new RefreshToken(token, user, expiresAt));
+    public RefreshToken save(User user, String rawRefreshToken, String jti, java.time.Instant expiresAt) {
+        refreshTokenRepository.revokeAllByUser(user);
+
+        String tokenHash = tokenCryptoService.sha256(rawRefreshToken);
+        return refreshTokenRepository.save(new RefreshToken(tokenHash, user, jti, expiresAt));
     }
 
-    @Transactional(readOnly = true)
-    public RefreshToken getValidToken(String token) {
-        RefreshToken refreshToken = refreshTokenRepository.findByToken(token)
-                .orElseThrow(() -> new IllegalArgumentException("refresh token not found"));
+    @Transactional
+    public RefreshToken getValidTokenForUpdate(String rawRefreshToken) {
+        String tokenHash = tokenCryptoService.sha256(rawRefreshToken);
+
+        RefreshToken refreshToken = refreshTokenRepository.findByTokenHashForUpdate(tokenHash)
+                .orElseThrow(() -> new InvalidTokenException("refresh token not found"));
 
         if (refreshToken.isRevoked()) {
-            throw new IllegalArgumentException("refresh token revoked");
+            throw new RevokedTokenException("refresh token revoked");
         }
 
         if (refreshToken.isExpired()) {
-            throw new IllegalArgumentException("refresh token expired");
+            throw new ExpiredTokenException("refresh token expired");
         }
 
         return refreshToken;
-    }
-
-    @Transactional
-    public RefreshToken getValidTokenForUpdate(String token) {
-        RefreshToken refreshToken = refreshTokenRepository.findByTokenForUpdate(token)
-                .orElseThrow(() -> new IllegalArgumentException("refresh token not found"));
-
-        if (refreshToken.isRevoked()) {
-            throw new IllegalArgumentException("refresh token revoked");
-        }
-
-        if (refreshToken.isExpired()) {
-            throw new IllegalArgumentException("refresh token expired");
-        }
-
-        return refreshToken;
-    }
-
-    @Transactional
-    public void revoke(String token) {
-        refreshTokenRepository.findByToken(token).ifPresent(RefreshToken::revoke);
     }
 }

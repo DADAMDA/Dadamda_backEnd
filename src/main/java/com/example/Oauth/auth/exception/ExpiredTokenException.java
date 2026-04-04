@@ -1,0 +1,7 @@
+package com.example.Oauth.auth.exception;
+
+public class ExpiredTokenException extends RuntimeException {
+    public ExpiredTokenException(String message) {
+        super(message);
+    }
+}
