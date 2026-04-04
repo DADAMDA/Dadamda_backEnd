@@ -1,5 +1,8 @@
 package com.example.Oauth.common.exception;
 
+import com.example.Oauth.auth.exception.ExpiredTokenException;
+import com.example.Oauth.auth.exception.InvalidTokenException;
+import com.example.Oauth.auth.exception.RevokedTokenException;
 import com.example.Oauth.common.exception.MetadataCrawlException;
 import com.example.Oauth.common.exception.ResourceNotFoundException;
 import java.util.LinkedHashMap;
@@ -16,61 +19,40 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, Object>> validation(MethodArgumentNotValidException exception) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", "validation_error");
-        body.put("message", exception.getBindingResult().getFieldErrors().stream()
-                .map(FieldError::getDefaultMessage)
-                .filter(message -> message != null && !message.isBlank())
-                .distinct()
-                .collect(Collectors.joining(", ")));
-        ResponseEntity<Map<String, Object>> response = ResponseEntity.badRequest().body(body);
-        return response;
-    }
-
     @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, Object>> badRequest(IllegalArgumentException exception) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", "bad_request");
-        body.put("message", exception.getMessage());
-        ResponseEntity<Map<String, Object>> response = ResponseEntity.badRequest().body(body);
-        return response;
+    public ResponseEntity<?> badRequest(IllegalArgumentException e) {
+        return build(HttpStatus.BAD_REQUEST, "bad_request", e.getMessage());
     }
 
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<Map<String, Object>> notFound(ResourceNotFoundException exception) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", "not_found");
-        body.put("message", exception.getMessage());
-        ResponseEntity<Map<String, Object>> response = ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
-        return response;
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<?> invalidToken(InvalidTokenException e) {
+        return build(HttpStatus.UNAUTHORIZED, "invalid_token", e.getMessage());
     }
 
-    @ExceptionHandler(MetadataCrawlException.class)
-    public ResponseEntity<Map<String, Object>> crawlFailure(MetadataCrawlException exception) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", "metadata_crawl_failed");
-        body.put("message", exception.getMessage());
-        ResponseEntity<Map<String, Object>> response = ResponseEntity.status(HttpStatus.BAD_GATEWAY).body(body);
-        return response;
+    @ExceptionHandler(ExpiredTokenException.class)
+    public ResponseEntity<?> expiredToken(ExpiredTokenException e) {
+        return build(HttpStatus.UNAUTHORIZED, "token_expired", e.getMessage());
+    }
+
+    @ExceptionHandler(RevokedTokenException.class)
+    public ResponseEntity<?> revokedToken(RevokedTokenException e) {
+        return build(HttpStatus.UNAUTHORIZED, "revoked_token", e.getMessage());
     }
 
     @ExceptionHandler(JwtException.class)
-    public ResponseEntity<Map<String, Object>> invalidJwt(JwtException exception) {
-        Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", "invalid_token");
-        body.put("message", exception.getMessage());
-        ResponseEntity<Map<String, Object>> response = ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(body);
-        return response;
+    public ResponseEntity<?> jwtException(JwtException e) {
+        return build(HttpStatus.UNAUTHORIZED, "invalid_jwt", e.getMessage());
     }
 
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, Object>> internal(Exception exception) {
+    public ResponseEntity<?> internal(Exception e) {
+        return build(HttpStatus.INTERNAL_SERVER_ERROR, "internal_server_error", e.getMessage());
+    }
+
+    private ResponseEntity<Map<String, Object>> build(HttpStatus status, String code, String message) {
         Map<String, Object> body = new LinkedHashMap<>();
-        body.put("error", exception.getClass().getSimpleName());
-        body.put("message", exception.getMessage());
-        ResponseEntity<Map<String, Object>> response = ResponseEntity.internalServerError().body(body);
-        return response;
+        body.put("code", code);
+        body.put("message", message);
+        return ResponseEntity.status(status).body(body);
     }
 }

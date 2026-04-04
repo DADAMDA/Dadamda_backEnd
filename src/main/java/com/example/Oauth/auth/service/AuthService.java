@@ -1,6 +1,7 @@
 package com.example.Oauth.auth.service;
 
 import com.example.Oauth.auth.client.KakaoApiClient;
+import com.example.Oauth.auth.exception.InvalidTokenException;
 import com.example.Oauth.auth.token.RefreshToken;
 import com.example.Oauth.auth.verifier.GoogleTokenVerifier;
 import com.example.Oauth.auth.token.TokenResponse;
@@ -35,26 +36,32 @@ public class AuthService {
     }
 
     @Transactional
-    public TokenResponse loginWithKakao(String kakaoAccessToken) {
-        var info = kakaoApiClient.fetchUserInfo(kakaoAccessToken);
+    public TokenResponse refresh(String rawRefreshToken) {
+        JwtService.RefreshTokenClaims claims =
+                jwtService.parseAndValidateRefreshToken(rawRefreshToken);
 
-        boolean existed = userRepository
-                .findByProviderAndSubject("kakao", info.id())
-                .isPresent();
+        RefreshToken savedToken =
+                refreshTokenService.getValidTokenForUpdate(rawRefreshToken);
 
-        User user = userService.upsert(
-                "kakao",
-                info.id(),
-                info.email(),
-                info.nickname(),
-                info.profileImageUrl()
+        if (!savedToken.getJti().equals(claims.jti())) {
+            throw new InvalidTokenException("refresh token jti mismatch");
+        }
+
+        User user = savedToken.getUser();
+
+        savedToken.revoke();
+
+        String newAccessToken = jwtService.issueAccessToken(user);
+        JwtService.RefreshTokenResult newRefresh = jwtService.issueRefreshToken(user);
+
+        refreshTokenService.save(
+                user,
+                newRefresh.token(),
+                newRefresh.jti(),
+                newRefresh.expiresAt()
         );
 
-        String accessToken = jwtService.issueAccessToken(user);
-        String refreshToken = jwtService.issueRefreshToken(user);
-        refreshTokenService.save(user, refreshToken);
-
-        return new TokenResponse(accessToken, refreshToken, !existed);
+        return new TokenResponse(newAccessToken, newRefresh.token(), false);
     }
 
     @Transactional
@@ -74,29 +81,59 @@ public class AuthService {
         );
 
         String accessToken = jwtService.issueAccessToken(user);
-        String refreshToken = jwtService.issueRefreshToken(user);
-        refreshTokenService.save(user, refreshToken);
+        JwtService.RefreshTokenResult refresh = jwtService.issueRefreshToken(user);
 
-        return new TokenResponse(accessToken, refreshToken, !existed);
+        refreshTokenService.save(
+                user,
+                refresh.token(),
+                refresh.jti(),
+                refresh.expiresAt()
+        );
+
+        return new TokenResponse(accessToken, refresh.token(), !existed);
     }
 
     @Transactional
-    public TokenResponse refresh(String refreshToken) {
-        RefreshToken savedToken = refreshTokenService.getValidTokenForUpdate(refreshToken);
-        User user = savedToken.getUser();
+    public TokenResponse loginWithKakao(String kakaoAccessToken) {
+        var info = kakaoApiClient.fetchUserInfo(kakaoAccessToken);
+
+        boolean existed = userRepository
+                .findByProviderAndSubject("kakao", info.id())
+                .isPresent();
+
+        User user = userService.upsert(
+                "kakao",
+                info.id(),
+                info.email(),
+                info.nickname(),
+                info.profileImageUrl()
+        );
+
+        String accessToken = jwtService.issueAccessToken(user);
+        JwtService.RefreshTokenResult refresh = jwtService.issueRefreshToken(user);
+
+        refreshTokenService.save(
+                user,
+                refresh.token(),
+                refresh.jti(),
+                refresh.expiresAt()
+        );
+
+        return new TokenResponse(accessToken, refresh.token(), !existed);
+    }
+
+    @Transactional
+    public void logout(String rawRefreshToken) {
+        JwtService.RefreshTokenClaims claims =
+                jwtService.parseAndValidateRefreshToken(rawRefreshToken);
+
+        RefreshToken savedToken =
+                refreshTokenService.getValidTokenForUpdate(rawRefreshToken);
+
+        if (!savedToken.getJti().equals(claims.jti())) {
+            throw new InvalidTokenException("refresh token jti mismatch");
+        }
 
         savedToken.revoke();
-
-        String newAccessToken = jwtService.issueAccessToken(user);
-        String newRefreshToken = jwtService.issueRefreshToken(user);
-
-        refreshTokenService.save(user, newRefreshToken);
-
-        return new TokenResponse(newAccessToken, newRefreshToken, false);
-    }
-
-    @Transactional
-    public void logout(String refreshToken) {
-        refreshTokenService.revoke(refreshToken);
     }
 }

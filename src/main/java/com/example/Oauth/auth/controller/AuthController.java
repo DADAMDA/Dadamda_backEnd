@@ -17,7 +17,7 @@ public class AuthController {
         this.authService = authService;
     }
 
-    private static void requireToken(String token) {
+    private void validate(String token) {
         if (token == null || token.isBlank()) {
             throw new IllegalArgumentException("token is required");
         }
@@ -25,24 +25,25 @@ public class AuthController {
 
     @PostMapping("/kakao")
     public ResponseEntity<TokenResponse> kakao(@RequestBody TokenRequest req) {
-        requireToken(req.token());
+        validate(req.token());
         return ResponseEntity.ok(authService.loginWithKakao(req.token()));
     }
 
     @PostMapping("/google")
     public ResponseEntity<TokenResponse> google(@RequestBody TokenRequest req) {
-        requireToken(req.token());
+        validate(req.token());
         return ResponseEntity.ok(authService.loginWithGoogle(req.token()));
     }
 
     @PostMapping("/refresh")
     public ResponseEntity<TokenResponse> refresh(@RequestBody RefreshTokenRequest req) {
-        requireToken(req.refreshToken());
+        validate(req.refreshToken());
         return ResponseEntity.ok(authService.refresh(req.refreshToken()));
     }
 
     @PostMapping("/logout")
     public ResponseEntity<Void> logout(@RequestBody RefreshTokenRequest req) {
+        validate(req.refreshToken());
         authService.logout(req.refreshToken());
         return ResponseEntity.ok().build();
     }
